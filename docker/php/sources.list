@@ -1,0 +1,9 @@
+# 阿里云 Debian 源 (适配 Debian 12 Bookworm)
+deb http://mirrors.aliyun.com/debian/ bookworm main non-free non-free-firmware
+deb-src http://mirrors.aliyun.com/debian/ bookworm main non-free non-free-firmware
+
+deb http://mirrors.aliyun.com/debian-security/ bookworm-security main non-free non-free-firmware
+deb-src http://mirrors.aliyun.com/debian-security/ bookworm-security main non-free non-free-firmware
+
+deb http://mirrors.aliyun.com/debian/ bookworm-updates main non-free non-free-firmware
+deb-src http://mirrors.aliyun.com/debian/ bookworm-updates main non-free non-free-firmware
