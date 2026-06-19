@@ -37,7 +37,7 @@ services:
     # Nginx 反向代理容器
     nginx:
         image: nginx:1.25-alpine
-        container_name: football-nginx  # 更新容器名称
+        container_name: football-nginx
         restart: unless-stopped
         ports:
             - "${APP_PORT:-80}:80"
