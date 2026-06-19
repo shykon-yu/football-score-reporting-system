@@ -1,22 +1,19 @@
 services:
-    # PHP-FPM 应用容器
-    app:
+    football:
         build:
             context: ./docker/php
             dockerfile: Dockerfile
-        container_name: laravel10-app  # 更新容器名称
+        container_name: football-app
         restart: unless-stopped
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
-            # 2. 挂载自定义 PHP 配置
             - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
 
-            # 注意：挂载路径必须精确到 vendor，不能是整个 /var/www/html
-            - app_vendor:/var/www/html/vendor
-
-            # 4. 同理，用命名卷保护 node_modules
-            - app_node_modules:/var/www/html/node_modules
+            # 挂载vendor
+            - football_vendor:/var/www/html/vendor
+            # 命名卷保护 node_modules
+            - football_node_modules:/var/www/html/node_modules
         environment:
             - TZ=Asia/Shanghai
             - COMPOSER_ALLOW_SUPERUSER=1
@@ -31,12 +28,12 @@ services:
         networks:
             - laravel-net
         labels:
-            dev.orbstack.domains: erp.test  # Orbstack 自动域名
+            dev.orbstack.domains: footballbbs.test  #自动域名
 
     # Nginx 反向代理容器
     nginx:
         image: nginx:1.25-alpine
-        container_name: laravel10-nginx  # 更新容器名称
+        container_name: football-nginx  # 更新容器名称
         restart: unless-stopped
         ports:
             - "${APP_PORT:-80}:80"
@@ -45,46 +42,44 @@ services:
             - ./:/var/www/html
             - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
         depends_on:
-            - app
+            - football-app
         networks:
             - laravel-net
 
     # MySQL 8.0（稳定版）
     mysql:
         image: mysql:8.0.36
-        container_name: laravel10-mysql  # 更新容器名称
+        container_name: football-mysql  # 更新容器名称
         restart: unless-stopped
         ports:
             - "${FORWARD_DB_PORT:-3306}:3306"
         environment:
-            MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-sanji90}"
-            MYSQL_DATABASE: "${DB_DATABASE:-bbs}"
-            MYSQL_USER: "${DB_USERNAME:-shykon}"
-            MYSQL_PASSWORD: "${DB_PASSWORD:-521jinling}"
+            MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root123456}"
+            MYSQL_DATABASE: "${DB_DATABASE:-laravel}"
+            MYSQL_USER: "${DB_USERNAME:-root}"
+            MYSQL_PASSWORD: "${DB_PASSWORD:-root123456}"
             TZ: Asia/Shanghai
         volumes:
             - mysql-data:/var/lib/mysql
             - ./docker/data/mysql/conf/my.cnf:/etc/mysql/conf.d/my.cnf:ro
-            #- ./docker/data/mysql:/var/lib/mysql
         command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
         networks:
             - laravel-net
         healthcheck:
-            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD:-sanji90}"]
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD:-root123456}"]
             retries: 3
             timeout: 5s
             interval: 10s
 
-    # Redis 7（Laravel 缓存/队列标配）
+    # Redis 7
     redis:
         image: redis:7.2-alpine
-        container_name: laravel10-redis  # 更新容器名称
+        container_name: football-redis
         restart: unless-stopped
         ports:
             - "${FORWARD_REDIS_PORT:-6379}:6379"
         volumes:
             - redis-data:/data
-            #- ./docker/data/redis:/data
         command: redis-server --appendonly yes
         networks:
             - laravel-net
@@ -96,18 +91,17 @@ services:
     # RabbitMQ 3.13 LTS（稳定版）
     rabbitmq:
         image: rabbitmq:3.13-management-alpine
-        container_name: laravel10-rabbitmq  # 更新容器名称
+        container_name: football-rabbitmq
         restart: unless-stopped
         ports:
             - "${FORWARD_RABBITMQ_PORT:-5672}:5672"
             - "${FORWARD_RABBITMQ_MGMT:-15672}:15672"
         environment:
-            RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:-shykon}"
-            RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS:-521jinling}"
+            RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:-admin}"
+            RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS:-admin123}"
             TZ: Asia/Shanghai
         volumes:
             - rabbitmq-data:/var/lib/rabbitmq
-            #- ./docker/data/rabbitmq:/var/lib/rabbitmq
         networks:
             - laravel-net
         healthcheck:
@@ -121,11 +115,11 @@ networks:
         driver: bridge
 
 volumes:
-    app_vendor:
-    app_node_modules:
+    football_vendor:
+    football_node_modules:
     mysql-data:
         driver: local
     redis-data:
         driver: local
-    rabbitmq-data:  # 补充了原文件中遗漏的声明
+    rabbitmq-data:
         driver: local
